@@ -1,0 +1,39 @@
+.slider {
+  &-wrapper {
+    position: relative;
+  }
+  &-controls {
+    position: absolute;
+    left: 0;
+    top: -50px;
+    width: 100%;
+    font-size: 20px;
+    @include flex(row, space-between, flex-start, nowrap);
+    .slider {
+      &-prev {
+        &__icon {
+          transform: rotateY(180deg);
+        }
+      }
+      &-prev,
+      &-next {
+        cursor: pointer;
+        @include flex();
+        @include wh(40px, 40px);
+        background: $clr-blue;
+        border-radius: 50%;
+        span {
+          @include wh(fit-content, fit-content);
+          color: $clr-white;
+        }
+        &__icon {
+          max-width: 30px;
+          stroke: $clr-white;
+        }
+      }
+    }
+  }
+  &__item {
+    background: $clr-blue;
+  }
+}
