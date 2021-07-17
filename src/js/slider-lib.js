@@ -3,12 +3,14 @@ const settings = {
   controlsContainer: '.slider-controls',
   startingSlide: 0,
   styles: {
-    width: 300,
-    height: 300,
+    width: 285,
+    height: 200,
     marginRight: 20,
     padding: '',
+    transition: 0.2,
   },
 }
+
 const settingsDefault = {
   sliderContainer: '',
   controlsContainer: '',
@@ -18,18 +20,23 @@ const settingsDefault = {
     height: 300,
     marginRight: 0,
     padding: 0,
+    transition: 0.2,
   },
 }
 document.addEventListener('DOMContentLoaded', () => {
+  if (!settings) {
+    return
+  }
   function setStylesToSlides(sliderContainer, styles) {
     const slides = getSlides(sliderContainer)
     Object.keys(styles).forEach((style) => {
       slides.forEach((slide, index) => {
-        slide.dataset.index = index + 1
+        slide.dataset.index = index
         slide.style[style] = styles[style]
       })
     })
   }
+
   function getSlides(sliderContainer) {
     return Array.from(sliderContainer.children)
   }
@@ -47,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
     addListener(buttons, 'click', (e) => {
-      moveSlide(sliderContainer, e.currentTarget.dataset.direction, styles)
+      moveSlider(sliderContainer, e.currentTarget.dataset.direction, styles)
     })
   }
   function getSliderWhitespace(sliderContainer, styles) {
@@ -56,49 +63,75 @@ document.addEventListener('DOMContentLoaded', () => {
       (styles.width + styles.marginRight) * getNumberOfSlides(sliderContainer)
     )
   }
-
   function addListener(elements, listener, cb) {
-    if (typeof elements != 'object' && !Array.isArray(elements)) {
-      throw new Error(
-        'you cannot use ' + ` ${typeof elements}` + ' with addListener'
-      )
-    }
-    if (Array.isArray(elements)) {
+    if (elements instanceof NodeList || Array.isArray(elements)) {
       elements.forEach((element) => {
         element.addEventListener(listener, cb)
       })
-    } else {
+    } else if (elements instanceof HTMLElement) {
       elements.addEventListener(listener, cb)
+    } else {
+      throw new Error(`${elements} is not a NodeList or HTMLElement`)
     }
   }
-  function getSliderPosition(element) {
-    return parseInt(window.getComputedStyle(element).transform.split([','])[4])
+  function getSliderPosition(sliderContainer, styles) {
+    const currentSlide = sliderContainer.dataset.currentSlide
+    return parseInt(styles.width * currentSlide)
   }
-  function moveSlide(sliderContainer, direction, styles) {
-    const slidesCount = getNumberOfSlides(sliderContainer)
-    const currentSlide = parseInt(sliderContainer.dataset.currentSlide)
-    console.log(currentSlide)
-    console.log(slidesCount)
 
+  function moveSliderPrev(options) {
+    const {
+      sliderContainer,
+      sliderDataset,
+      sliderPosition,
+      currentSlide,
+      styles,
+    } = options
+    sliderDataset.currentSlide = +sliderDataset.currentSlide - 1
+    sliderContainer.style.transform = `translate3d(${
+      sliderPosition -
+      (styles.width + styles.marginRight * (Math.abs(currentSlide) + 1))
+    }px, 0px, 0px)`
+  }
+  function moveSliderNext(options) {
+    const {
+      sliderContainer,
+      sliderDataset,
+      sliderPosition,
+      currentSlide,
+      styles,
+    } = options
+    sliderDataset.currentSlide = +sliderDataset.currentSlide + 1
+    sliderContainer.style.transform = `translate3d(${
+      sliderPosition +
+      (styles.width - styles.marginRight * (Math.abs(currentSlide) - 1))
+    }px, 0px, 0px)`
+  }
+  function moveSlider(sliderContainer, direction, styles) {
+    const slidesCount = getNumberOfSlides(sliderContainer)
+    const sliderDataset = sliderContainer.dataset
+    const currentSlide = parseInt(sliderDataset.currentSlide)
+    const sliderPosition = getSliderPosition(sliderContainer, styles)
+    const slidingOptions = {
+      sliderContainer,
+      sliderDataset,
+      sliderPosition,
+      currentSlide,
+      styles,
+    }
     if (direction === 'prev') {
-      if (+sliderContainer.dataset.currentSlide + 1 > slidesCount) {
+      if (Math.abs(currentSlide) + 1 > slidesCount - 1) {
         return
       }
-      sliderContainer.dataset.currentSlide =
-        +sliderContainer.dataset.currentSlide + 1
-      sliderContainer.style.transform = `translate3d(${
-        getSliderPosition(sliderContainer) - styles.width - styles.marginRight
-      }px, 0px, 0px)`
+      moveSliderPrev(slidingOptions)
     }
     if (direction === 'next') {
-      if (+sliderContainer.dataset.currentSlide - 1 < 1) {
+      if (+currentSlide + 1 > 0) {
         return
       }
-      sliderContainer.dataset.currentSlide -= 1
-      sliderContainer.style.transform = `translate3d(${
-        getSliderPosition(sliderContainer) + styles.width + styles.marginRight
-      }px, 0px, 0px)`
+      moveSliderNext(slidingOptions)
     }
+    console.log(direction)
   }
 
   function calcSliderWidth(sliderContainer, options) {
@@ -109,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initSlider(settings) {
     const sliderContainer = document.querySelector(settings.sliderContainer)
-    sliderContainer.dataset.currentSlide = settings.startingSlide + 1
+    sliderContainer.dataset.currentSlide = settings.startingSlide
     const controlsContainer = document.querySelector(settings.controlsContainer)
     sliderContainer.classList.add('my-slider')
     setStylesToSlides(sliderContainer, settings.styles)
