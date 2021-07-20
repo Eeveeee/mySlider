@@ -2,11 +2,12 @@ const settings = {
   sliderContainer: '.slider',
   controlsContainer: '.slider-controls',
   startingSlide: 0,
+  autoWidth: true,
+  slidesToShow: 2,
   styles: {
-    width: 285,
+    width: 250,
     height: 200,
-    marginRight: 20,
-    padding: '',
+    marginRight: 50,
     transition: 0.2,
   },
 }
@@ -15,20 +16,23 @@ const settingsDefault = {
   sliderContainer: '',
   controlsContainer: '',
   startingSlide: 0,
+  autoWidth: false,
+  slidesToShow: '',
   styles: {
     width: 300,
     height: 300,
     marginRight: 0,
-    padding: 0,
     transition: 0.2,
   },
 }
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!settings) {
     return
   }
   function setStylesToSlides(sliderContainer, styles) {
     const slides = getSlides(sliderContainer)
+
     Object.keys(styles).forEach((style) => {
       slides.forEach((slide, index) => {
         slide.dataset.index = index
@@ -87,10 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
       currentSlide,
       styles,
     } = options
-    sliderDataset.currentSlide = +sliderDataset.currentSlide - 1
+    sliderDataset.currentSlide = +sliderDataset.currentSlide + 1
     sliderContainer.style.transform = `translate3d(${
-      sliderPosition -
-      (styles.width + styles.marginRight * (Math.abs(currentSlide) + 1))
+      sliderPosition +
+      (styles.width - styles.marginRight * (Math.abs(currentSlide) - 1))
     }px, 0px, 0px)`
   }
   function moveSliderNext(options) {
@@ -101,10 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
       currentSlide,
       styles,
     } = options
-    sliderDataset.currentSlide = +sliderDataset.currentSlide + 1
+    sliderDataset.currentSlide = +sliderDataset.currentSlide - 1
     sliderContainer.style.transform = `translate3d(${
-      sliderPosition +
-      (styles.width - styles.marginRight * (Math.abs(currentSlide) - 1))
+      sliderPosition -
+      (styles.width + styles.marginRight * (Math.abs(currentSlide) + 1))
     }px, 0px, 0px)`
   }
   function moveSlider(sliderContainer, direction, styles) {
@@ -120,13 +124,13 @@ document.addEventListener('DOMContentLoaded', () => {
       styles,
     }
     if (direction === 'prev') {
-      if (Math.abs(currentSlide) + 1 > slidesCount - 1) {
+      if (+currentSlide + 1 > 0) {
         return
       }
       moveSliderPrev(slidingOptions)
     }
     if (direction === 'next') {
-      if (+currentSlide + 1 > 0) {
+      if (Math.abs(currentSlide) + 1 > slidesCount - 1) {
         return
       }
       moveSliderNext(slidingOptions)
@@ -140,13 +144,33 @@ document.addEventListener('DOMContentLoaded', () => {
     return slideWidth * slidesAmount + slideMargin * slidesAmount
   }
 
+  function setAutoWidth(settings, sliderContainer) {
+    const styles = settings.styles
+    const containerWidth = sliderContainer.offsetWidth
+    const { slidesToShow } = settings
+    let calculatedWidth = 0
+    if (typeof settings.slidesToShow === 'number') {
+      console.log(containerWidth / slidesToShow)
+      console.log(slidesToShow * styles.marginRight)
+      calculatedWidth =
+        (containerWidth - (slidesToShow - 1) * styles.marginRight) /
+        slidesToShow
+      styles.width = calculatedWidth
+      return
+    }
+    styles.width = styles.width = containerWidth
+    console.log(calculatedWidth)
+  }
+
   function initSlider(settings) {
     const sliderContainer = document.querySelector(settings.sliderContainer)
     sliderContainer.dataset.currentSlide = settings.startingSlide
     const controlsContainer = document.querySelector(settings.controlsContainer)
     sliderContainer.classList.add('my-slider')
+    if (settings.autoWidth) {
+      setAutoWidth(settings, sliderContainer)
+    }
     setStylesToSlides(sliderContainer, settings.styles)
-
     initSliderButtons(
       sliderContainer,
       Array.from(controlsContainer.children),
